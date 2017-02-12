@@ -9,6 +9,7 @@ main = mapM_ (quickCheckWith stdArgs { maxSuccess = 5000 })
   , prop_everyValueIsNormalForm
   , prop_everyBoolNormalFormIsValue
   , prop_terminationOfEvaluation
+  , prop_evaluationReducesTermSize
   ]
 
 genBool = oneof [return TmTrue,
@@ -56,3 +57,7 @@ prop_everyBoolNormalFormIsValue = forAll genBool $ \t -> isNormalForm t ==> isVa
 
 -- Theorem 3.5.12: For every term t there is some normal form t' such that t -*> t'
 prop_terminationOfEvaluation = forAll genTerm $ isNormalForm . eval
+
+-- Page 39: Each evaluation step reduces the size of the term
+prop_evaluationReducesTermSize = forAll genTerm $ \t -> maybeSize (eval1 t) < size t
+  where maybeSize = maybe 0 size
