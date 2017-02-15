@@ -1,5 +1,8 @@
 module Arith where
 
+import Data.List (nub)
+import Data.Maybe (isNothing)
+
 data Term = TmTrue
           | TmFalse
           | TmIf Term Term Term
@@ -20,6 +23,24 @@ isVal :: Term -> Bool
 isVal TmTrue = True
 isVal TmFalse = True
 isVal t = isNumericVal t
+
+consts :: Term -> [Term]
+consts TmTrue  = [TmTrue]
+consts TmFalse = [TmFalse]
+consts TmZero  = [TmZero]
+consts (TmSucc t1) = consts t1
+consts (TmPred t1) = consts t1
+consts (TmIsZero t1) = consts t1
+consts (TmIf t1 t2 t3) = nub (consts t1 ++ consts t2 ++ consts t3)
+
+size :: Term -> Int
+size TmTrue  = 1
+size TmFalse = 1
+size TmZero  = 1
+size (TmSucc t1) = size t1 + 1
+size (TmPred t1) = size t1 + 1
+size (TmIsZero t1) = size t1 + 1
+size (TmIf t1 t2 t3) = size t1 + size t2 + size t3 + 1
 
 {- Evaluation -}
 
@@ -43,6 +64,9 @@ eval1 (TmIsZero (TmSucc nv))                   -- E-IszeroSucc
 eval1 (TmIsZero t) = fmap TmIsZero (eval1 t)   -- E-IsZero
 
 eval1 _ = Nothing                              -- No rule applies
+
+isNormalForm :: Term -> Bool
+isNormalForm = isNothing . eval1
 
 eval :: Term -> Term
 eval t = case eval1 t of
