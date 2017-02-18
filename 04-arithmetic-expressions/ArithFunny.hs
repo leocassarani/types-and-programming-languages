@@ -93,6 +93,9 @@ prop_determinacyOfOneStepEvaluation t = property $ length (eval1 t) <= 1
 -- Theorem 3.5.7: Every value is in normal form
 prop_everyValueIsNormalForm t = isVal t ==> isNormalForm t
 
+-- Theorem 3.5.11: If t -*> u and t-*> u', where u and u' are both normal forms, then u = u'
+prop_uniquenessOfNormalForms t = property $ length (eval t) <= 1
+
 -- Theorem 3.5.12: For every term t there is some normal form t' such that t -*> t'
 prop_terminationOfEvaluation t = property $ any isNormalForm (eval t)
 
@@ -102,6 +105,7 @@ prop_evaluationReducesTermSize t = property $ all (\t' -> size t' < size t) (eva
 main = mapM_ (quickCheckWith stdArgs { maxSuccess = 5000 })
   [ prop_determinacyOfOneStepEvaluation
   , prop_everyValueIsNormalForm
+  , prop_uniquenessOfNormalForms
   , prop_terminationOfEvaluation
   , prop_evaluationReducesTermSize
   ]
