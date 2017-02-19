@@ -39,3 +39,12 @@ eval t@(TmIsZero t1) =
 eval t
   | isVal t = t                       -- B-Value
   | otherwise = t                     -- No reduction
+
+-- Exercise 3.5.17: Show that small-step and big-step semantics for this language coincide,
+-- i.e. t-*> v iff t ⇓ v
+prop_bigAndSmallStepEquivalence t =
+  let v1 = eval t
+      v2 = SmallStep.eval t
+   in (isVal v1 ==> v1 == v2) .&&. (isVal v2 ==> v1 == v2)
+
+main = quickCheckWith stdArgs { maxSuccess = 100000 } prop_bigAndSmallStepEquivalence
