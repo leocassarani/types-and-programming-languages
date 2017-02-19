@@ -1,7 +1,8 @@
 module Arith where
 
+import Control.Monad (liftM, liftM3)
 import Data.List (nub)
-import Data.Maybe (isNothing)
+import Test.QuickCheck
 
 data Term = TmTrue
           | TmFalse
@@ -11,8 +12,6 @@ data Term = TmTrue
           | TmPred Term
           | TmIsZero Term
           deriving (Eq, Show)
-
-{- Syntax -}
 
 isNumericVal :: Term -> Bool
 isNumericVal TmZero = True
@@ -42,33 +41,22 @@ size (TmPred t1) = size t1 + 1
 size (TmIsZero t1) = size t1 + 1
 size (TmIf t1 t2 t3) = size t1 + size t2 + size t3 + 1
 
-{- Evaluation -}
+instance Arbitrary Term where
+  arbitrary = oneof [ return TmTrue
+                    , return TmFalse
+                    , return TmZero
+                    , liftM TmSucc arbitrary
+                    , liftM TmPred arbitrary
+                    , liftM TmIsZero arbitrary
+                    , liftM3 TmIf arbitrary arbitrary arbitrary
+                    ]
 
-eval1 :: Term -> Maybe Term
-
-eval1 (TmIf TmTrue t2 t3) = Just t2            -- E-IfTrue
-eval1 (TmIf TmFalse t2 t3) = Just t3           -- E-IfFalse
-eval1 (TmIf t1 t2 t3)                          -- E-If
-  = fmap (\t1' -> TmIf t1' t2 t3) (eval1 t1)
-
-eval1 (TmSucc t) = fmap TmSucc (eval1 t)       -- E-Succ
-
-eval1 (TmPred TmZero) = Just TmZero            -- E-PredZero
-eval1 (TmPred (TmSucc nv))
-  | isNumericVal nv = Just nv                  -- E-PredSucc
-eval1 (TmPred t) = fmap TmPred (eval1 t)       -- E-Pred
-
-eval1 (TmIsZero TmZero) = Just TmTrue          -- E-IszeroZero
-eval1 (TmIsZero (TmSucc nv))                   -- E-IszeroSucc
-  | isNumericVal nv = Just TmFalse
-eval1 (TmIsZero t) = fmap TmIsZero (eval1 t)   -- E-IsZero
-
-eval1 _ = Nothing                              -- No rule applies
-
-isNormalForm :: Term -> Bool
-isNormalForm = isNothing . eval1
-
-eval :: Term -> Term
-eval t = case eval1 t of
-           Just t' -> eval t'
-           Nothing -> t
+  shrink (TmIf t1 t2 t3) =
+    [t1, t2, t3] ++
+    [TmIf t1' t2 t3 | t1' <- shrink t1] ++
+    [TmIf t1 t2' t3 | t2' <- shrink t2] ++
+    [TmIf t1 t2 t3' | t3' <- shrink t3]
+  shrink (TmSucc t1) = t1 : [TmSucc t1' | t1' <- shrink t1]
+  shrink (TmPred t1) = t1 : [TmPred t1' | t1' <- shrink t1]
+  shrink (TmIsZero t1) = t1 : [TmIsZero t1' | t1' <- shrink t1]
+  shrink _ = []
