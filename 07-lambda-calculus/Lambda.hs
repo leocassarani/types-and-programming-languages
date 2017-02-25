@@ -33,6 +33,7 @@ eval t
 
 reduce :: Term -> Term
 reduce (App (Abs x t12) t2) = bind x t2 t12
+reduce (App (App t1 t2) t3) = (App (reduce (App t1 t2)) t3)
 reduce t = t
 
 bind :: String -> Term -> Term -> Term
