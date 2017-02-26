@@ -15,6 +15,19 @@ tmAnd = Abs "b" (Abs "c" (App (App (Var 1) (Var 0)) tmFls))
 tmOr = Abs "b" (Abs "c" (App (App (Var 1) tmTru) (Var 0)))
 tmNot = Abs "b" (App (App (Var 0) tmFls) tmTru)
 
+tmPair = Abs "f" (Abs "s" (Abs "b" (App (App (Var 0) (Var 2)) (Var 1))))
+tmFst = Abs "p" (App (Var 0) tmTru)
+tmSnd = Abs "p" (App (Var 0) tmFls)
+
+tmZero = Abs "s" (Abs "z" (Var 0))
+tmSucc = Abs "n" (Abs "s" (Abs "z" (App (Var 1) (App (App (Var 2) (Var 1)) (Var 0)))))
+
+tmIsZero = Abs "m" (App (App (Var 0) (Abs "x" tmFls)) tmTru)
+
+tmPlus = Abs "m" (Abs "n" (Abs "s" (Abs "z" (App (App (Var 3) (Var 1)) (App (App (Var 2) (Var 1)) (Var 0))))))
+tmTimes = Abs "m" (Abs "n" (App (App (Var 1) (App tmPlus (Var 0))) tmZero))
+tmPow = Abs "m" (Abs "n" (App (Var 1) (Var 0)))
+
 instance Show Term where
   show = showTm []
 
