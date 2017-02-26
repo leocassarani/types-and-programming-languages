@@ -21,12 +21,35 @@ instance Show Term where
 type Context = [String]
 
 showTm :: Context -> Term -> String
-showTm ctx (Var x) = ctx !! x
+showTm ctx (Var x) = indexToName ctx x
 showTm ctx (App t1 t2) = "(" ++ showTm ctx t1 ++ " " ++ showTm ctx t2 ++ ")"
 showTm ctx (Abs x t1) = "(λ" ++ x' ++ ". " ++ showTm ctx' t1 ++ ")"
   where (ctx', x') = freshName ctx x
+
+indexToName :: Context -> Int -> String
+indexToName ctx x
+  | x < length ctx = ctx !! x
+  | otherwise = "[" ++ show x ++ "]"
 
 freshName :: Context -> String -> (Context, String)
 freshName ctx x
   | x `elem` ctx = freshName ctx (x ++ "'")
   | otherwise = (x : ctx, x)
+
+termShift :: Int -> Term -> Term
+termShift d t = termShift' 0 t
+  where
+    termShift' c t@(Var x)
+      | x >= c = Var (x + d)
+      | otherwise = t
+    termShift' c (Abs x t1) = Abs x (termShift' (c + 1) t1)
+    termShift' c (App t1 t2) = App (termShift' c t1) (termShift' c t2)
+
+termSub :: Int -> Term -> Term -> Term
+termSub j s t = termSub' 0 t
+  where
+    termSub' c t@(Var x)
+      | x == j + c = termShift c s
+      | otherwise = t
+    termSub' c (Abs x t1) = Abs x (termSub' (c + 1) t1)
+    termSub' c (App t1 t2) = App (termSub' c t1) (termSub' c t2)
