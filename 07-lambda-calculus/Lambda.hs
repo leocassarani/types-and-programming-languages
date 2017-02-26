@@ -53,3 +53,21 @@ termSub j s t = termSub' 0 t
       | otherwise = t
     termSub' c (Abs x t1) = Abs x (termSub' (c + 1) t1)
     termSub' c (App t1 t2) = App (termSub' c t1) (termSub' c t2)
+
+termSubTop :: Term -> Term -> Term
+termSubTop s t = termShift (-1) (termSub 0 (termShift 1 s) t)
+
+isVal :: Term -> Bool
+isVal (Abs _ _) = True
+isVal _ = False
+
+eval1 :: Term -> Maybe Term
+eval1 (App (Abs x t12) v2)
+  | isVal v2 = Just (termSubTop v2 t12) -- E-AppAbs
+eval1 (App t1 t2)
+  | isVal t1  = fmap (\t2' -> App t1 t2') (eval1 t2) -- E-App2
+  | otherwise = fmap (\t1' -> App t1' t2) (eval1 t1) -- E-App1
+eval1 _ = Nothing
+
+eval :: Term -> Term
+eval t = maybe t eval (eval1 t)
