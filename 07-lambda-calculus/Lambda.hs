@@ -20,13 +20,20 @@ tmFst = Abs "p" (App (Var 0) tmTru)
 tmSnd = Abs "p" (App (Var 0) tmFls)
 
 tmZero = Abs "s" (Abs "z" (Var 0))
-tmSucc = Abs "n" (Abs "s" (Abs "z" (App (Var 1) (App (App (Var 2) (Var 1)) (Var 0)))))
-
 tmIsZero = Abs "m" (App (App (Var 0) (Abs "x" tmFls)) tmTru)
 
+tmSucc = Abs "n" (Abs "s" (Abs "z" (App (Var 1) (App (App (Var 2) (Var 1)) (Var 0)))))
+tmPred = Abs "m" (App tmFst (App (App (Var 0) tmSs) tmZz))
+  where tmZz = App (App tmPair tmZero) tmZero
+        tmSs = Abs "p" (App (App tmPair (App tmSnd (Var 0))) (App (App tmPlus tmOne) (App tmSnd (Var 0))))
+        tmOne = App tmSucc tmZero
+
 tmPlus = Abs "m" (Abs "n" (Abs "s" (Abs "z" (App (App (Var 3) (Var 1)) (App (App (Var 2) (Var 1)) (Var 0))))))
+tmSub = Abs "m" (Abs "n" (App (App (Var 0) tmPred) (Var 1)))
 tmTimes = Abs "m" (Abs "n" (App (App (Var 1) (App tmPlus (Var 0))) tmZero))
 tmPow = Abs "m" (Abs "n" (App (Var 1) (Var 0)))
+
+tmEqual = Abs "m" (Abs "n" (App (App tmAnd (App tmIsZero (App (App tmSub (Var 1)) (Var 0)))) (App tmIsZero (App (App tmSub (Var 0)) (Var 1)))))
 
 instance Show Term where
   show = showTm []
