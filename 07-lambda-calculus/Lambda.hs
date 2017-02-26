@@ -16,6 +16,17 @@ tmOr = Abs "b" (Abs "c" (App (App (Var 1) tmTru) (Var 0)))
 tmNot = Abs "b" (App (App (Var 0) tmFls) tmTru)
 
 instance Show Term where
-  show (Var x) = show x
-  show (Abs _ t1) = "(λ. " ++ show t1 ++ ")"
-  show (App t1 t2) = "(" ++ show t1 ++ " " ++ show t2 ++ ")"
+  show = showTm []
+
+type Context = [String]
+
+showTm :: Context -> Term -> String
+showTm ctx (Var x) = ctx !! x
+showTm ctx (App t1 t2) = "(" ++ showTm ctx t1 ++ " " ++ showTm ctx t2 ++ ")"
+showTm ctx (Abs x t1) = "(λ" ++ x' ++ ". " ++ showTm ctx' t1 ++ ")"
+  where (ctx', x') = freshName ctx x
+
+freshName :: Context -> String -> (Context, String)
+freshName ctx x
+  | x `elem` ctx = freshName ctx (x ++ "'")
+  | otherwise = (x : ctx, x)
