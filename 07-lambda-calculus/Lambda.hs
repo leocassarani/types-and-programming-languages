@@ -5,34 +5,53 @@ data Term = Var Int
           | App Term Term
           deriving (Eq)
 
+-- λx. x
 tmId = Abs "x" (Var 0)
 
+-- λt. λf. t
 tmTru = Abs "t" (Abs "f" (Var 1))
+-- λt. λf. f
 tmFls = Abs "t" (Abs "f" (Var 0))
+-- λl. λm. λn. l m n
 tmTest = Abs "l" (Abs "m" (Abs "n" (App (App (Var 2) (Var 1)) (Var 0))))
 
+-- λb. λc. b c tru
 tmAnd = Abs "b" (Abs "c" (App (App (Var 1) (Var 0)) tmFls))
+-- λb. λc. b tru c
 tmOr = Abs "b" (Abs "c" (App (App (Var 1) tmTru) (Var 0)))
+-- λb. b fls tru
 tmNot = Abs "b" (App (App (Var 0) tmFls) tmTru)
 
+-- λf. λs. λb. b f s
 tmPair = Abs "f" (Abs "s" (Abs "b" (App (App (Var 0) (Var 2)) (Var 1))))
+-- λp. p tru
 tmFst = Abs "p" (App (Var 0) tmTru)
+-- λp. p fls
 tmSnd = Abs "p" (App (Var 0) tmFls)
 
+-- λs. λz. z
 tmZero = Abs "s" (Abs "z" (Var 0))
+-- λm. m (λx. fls) tru
 tmIsZero = Abs "m" (App (App (Var 0) (Abs "x" tmFls)) tmTru)
 
+-- λn. λs. λz. s (n s z)
 tmSucc = Abs "n" (Abs "s" (Abs "z" (App (Var 1) (App (App (Var 2) (Var 1)) (Var 0)))))
+-- λm. fst (m ss zz)
 tmPred = Abs "m" (App tmFst (App (App (Var 0) tmSs) tmZz))
   where tmZz = App (App tmPair tmZero) tmZero
         tmSs = Abs "p" (App (App tmPair (App tmSnd (Var 0))) (App (App tmPlus tmOne) (App tmSnd (Var 0))))
         tmOne = App tmSucc tmZero
 
+-- λm. λn. λs. λz. m s (n s z)
 tmPlus = Abs "m" (Abs "n" (Abs "s" (Abs "z" (App (App (Var 3) (Var 1)) (App (App (Var 2) (Var 1)) (Var 0))))))
+-- λm. λn. n pred m
 tmSub = Abs "m" (Abs "n" (App (App (Var 0) tmPred) (Var 1)))
+-- λm. λn. m (plus n) zero
 tmTimes = Abs "m" (Abs "n" (App (App (Var 1) (App tmPlus (Var 0))) tmZero))
+-- λm. λn. m n
 tmPow = Abs "m" (Abs "n" (App (Var 1) (Var 0)))
 
+-- λm. λn. and (isZero (sub m n)) (isZero (sub n m))
 tmEqual = Abs "m" (Abs "n" (App (App tmAnd (App tmIsZero (App (App tmSub (Var 1)) (Var 0)))) (App tmIsZero (App (App tmSub (Var 0)) (Var 1)))))
 
 instance Show Term where
