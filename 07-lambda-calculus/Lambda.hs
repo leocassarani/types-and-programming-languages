@@ -76,7 +76,7 @@ freshName ctx x
   | otherwise = (x : ctx, x)
 
 termShift :: Int -> Term -> Term
-termShift d t = termShift' 0 t
+termShift d = termShift' 0
   where
     termShift' c t@(Var x)
       | x >= c = Var (x + d)
@@ -85,7 +85,7 @@ termShift d t = termShift' 0 t
     termShift' c (App t1 t2) = App (termShift' c t1) (termShift' c t2)
 
 termSub :: Int -> Term -> Term -> Term
-termSub j s t = termSub' 0 t
+termSub j s = termSub' 0
   where
     termSub' c t@(Var x)
       | x == j + c = termShift c s
