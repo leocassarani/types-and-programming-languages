@@ -4,10 +4,11 @@ import Arith
 import Eval
 import TypeCheck
 
+import Control.Monad (liftM, liftM3)
 import Data.Maybe (isJust)
 import Test.QuickCheck
 
-main = mapM_ (quickCheckWith stdArgs { maxDiscardRatio = 100, maxSuccess = 50000 })
+main = mapM_ (quickCheckWith stdArgs { maxSuccess = 50000 })
   [ prop_progress
   , prop_preservation
   ]
@@ -24,3 +25,32 @@ isWellTyped = isJust . typeOf
 
 canEval :: Term -> Bool
 canEval = isJust . eval1
+
+instance Arbitrary Term where
+  arbitrary = oneof [genNat, genBool]
+
+  shrink (TmIf t1 t2 t3) =
+    [t1, t2, t3] ++
+    [TmIf t1' t2 t3 | t1' <- shrink t1] ++
+    [TmIf t1 t2' t3 | t2' <- shrink t2] ++
+    [TmIf t1 t2 t3' | t3' <- shrink t3]
+  shrink (TmSucc t1) = t1 : [TmSucc t1' | t1' <- shrink t1]
+  shrink (TmPred t1) = t1 : [TmPred t1' | t1' <- shrink t1]
+  shrink (TmIsZero t1) = t1 : [TmIsZero t1' | t1' <- shrink t1]
+  shrink _ = []
+
+genNat :: Gen Term
+genNat = oneof [ return TmZero
+               , return (TmSucc TmZero)
+               , return (TmPred TmZero)
+               , liftM TmSucc genNat
+               , liftM TmPred genNat
+               , liftM3 TmIf genBool genNat genNat
+               ]
+
+genBool :: Gen Term
+genBool = oneof [ return TmTrue
+                , return TmFalse
+                , liftM TmIsZero genNat
+                , liftM3 TmIf genBool genBool genBool
+                ]
