@@ -5,7 +5,7 @@ import Eval
 import TypeCheck
 
 import Control.Monad (liftM, liftM3)
-import Data.Maybe (isJust)
+import Data.Maybe (fromJust, isJust)
 import Test.QuickCheck
 
 main = mapM_ (quickCheckWith stdArgs { maxSuccess = 50000 })
@@ -17,8 +17,10 @@ main = mapM_ (quickCheckWith stdArgs { maxSuccess = 50000 })
 -- or else there is some t' with t → t'.
 prop_progress t = isWellTyped t ==> isVal t || canEval t
 
--- Theorem 8.3.3: If t : T and t → t', then t' : T'.
-prop_preservation t = isWellTyped t && canEval t ==> maybe False isWellTyped (eval1 t)
+-- Theorem 8.3.3: If t : T and t → t', then t' : T.
+prop_preservation t = isWellTyped t && canEval t ==> justTypeOf t == justTypeOf (justEval t)
+  where justTypeOf = fromJust . typeOf
+        justEval = fromJust . eval1
 
 isWellTyped :: Term -> Bool
 isWellTyped = isJust . typeOf
