@@ -1,6 +1,6 @@
 module Lambda where
 
-import Data.List hiding ((!!))
+import Control.Monad (guard)
 
 data Term = Tru
           | Fls
@@ -78,41 +78,32 @@ eval t = maybe t eval (eval1 t)
 
 typeOf :: Context -> Term -> Maybe Type
 
-typeOf _ Tru = Just Bool      -- T-True
-
-typeOf _ Fls = Just Bool      -- T-False
+typeOf _ Tru = return Bool -- T-True
+typeOf _ Fls = return Bool -- T-False
 
 typeOf ctx (If t1 t2 t3) = do -- T-If
-  typ1 <- typeOf ctx t1
+  Bool <- typeOf ctx t1
   typ2 <- typeOf ctx t2
   typ3 <- typeOf ctx t3
-  if typ2 == typ3
-     then Just typ2
-     else Nothing
+  guard (typ2 == typ3)
+  return typ2
 
-typeOf ctx (Var x) = typeFromContext ctx x -- T-Var
+typeOf ctx (Var x) = do -- T-Var
+  (_, VarBind typ) <- ctx `index` x
+  return typ
 
-typeOf ctx (Abs x typ1 t1) = -- T-Abs
-  typeOf ctx' t1 >>= Just . Func typ1
-    where ctx' = (x, VarBind typ1) : ctx
+typeOf ctx (Abs x typ1 t1) = do -- T-Abs
+  let ctx' = (x, VarBind typ1) : ctx
+  typ2 <- typeOf ctx' t1
+  return (Func typ1 typ2)
 
 typeOf ctx (App t1 t2) = do -- T-App
-  typ1 <- typeOf ctx t1
+  Func typ11 typ12 <- typeOf ctx t1
   typ2 <- typeOf ctx t2
-  case typ1 of
-    Func typ11 typ12 -> if typ11 == typ2
-                           then Just typ12
-                           else Nothing
-    otherwise -> Nothing
-
-typeFromContext :: Context -> Int -> Maybe Type
-typeFromContext ctx x = do
-  binding <- snd <$> ctx `index` x
-  case binding of
-    VarBind typ -> Just typ
-    otherwise -> Nothing
+  guard (typ11 == typ2)
+  return typ12
 
 index :: [a] -> Int -> Maybe a
 index [] _ = Nothing
 index (x:_) 0 = Just x
-index (x:xs) i = index xs (i - 1)
+index (_:xs) i = index xs (i - 1)
