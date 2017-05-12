@@ -1,35 +1,33 @@
 module TypeCheck where
 
 import Arith
+import Control.Monad (guard)
 
 data Type = Bool | Nat
   deriving (Eq, Show)
 
 typeOf :: Term -> Maybe Type
 
-typeOf TmTrue = Just Bool    -- T-True
+typeOf TmTrue = return Bool -- T-True
+typeOf TmFalse = return Bool -- T-False
 
-typeOf TmFalse = Just Bool   -- T-False
+typeOf (TmIf t1 t2 t3) = do -- T-If
+  Bool <- typeOf t1
+  typ2 <- typeOf t2
+  typ3 <- typeOf t3
+  guard (typ2 == typ3)
+  return typ2
 
-typeOf (TmIf t1 t2 t3)       -- T-If
-  = case (typeOf t1, typeOf t2, typeOf t3) of
-      (Just Bool, Just typ2, Just typ3)
-        | typ2 == typ3 -> Just typ2
-      otherwise -> Nothing
+typeOf TmZero = return Nat -- T-Zero
 
-typeOf TmZero = Just Nat     -- T-Zero
+typeOf (TmSucc t1) = do -- T-Succ
+  Nat <- typeOf t1
+  return Nat
 
-typeOf (TmSucc t1)           -- T-Succ
-  = case typeOf t1 of
-      Just Nat -> Just Nat
-      otherwise -> Nothing
+typeOf (TmPred t1) = do -- T-Pred
+  Nat <- typeOf t1
+  return Nat
 
-typeOf (TmPred t1)           -- T-Pred
-  = case typeOf t1 of
-      Just Nat -> Just Nat
-      otherwise -> Nothing
-
-typeOf (TmIsZero t1)         -- T-IsZero
-  = case typeOf t1 of
-      Just Nat -> Just Bool
-      otherwise -> Nothing
+typeOf (TmIsZero t1) = do -- T-IsZero
+  Nat <- typeOf t1
+  return Bool
