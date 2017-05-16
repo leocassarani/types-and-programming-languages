@@ -1,5 +1,13 @@
 module Lambda where
 
+data Type = Bool
+          | Func Type Type
+          deriving (Eq)
+
+instance Show Type where
+  show Bool = "Bool"
+  show (Func t1 t2) = "(" ++ show t1 ++ " → " ++ show t2 ++ ")"
+
 data Term = Tru
           | Fls
           | If Term Term Term
@@ -7,10 +15,6 @@ data Term = Tru
           | Abs String Type Term
           | App Term Term
           deriving (Eq)
-
-data Type = Bool
-          | Func Type Type
-          deriving (Eq, Show)
 
 instance Show Term where
   show = showTm []
@@ -22,6 +26,9 @@ data Binding = NameBind
              deriving (Eq, Show)
 
 showTm :: Context -> Term -> String
+showTm _ Tru = "true"
+showTm _ Fls = "false"
+showTm ctx (If t1 t2 t3) = "(if " ++ show t1 ++ " then " ++ show t2 ++ " else " ++ show t3 ++ ")"
 showTm ctx (Var x) = indexToName ctx x
 showTm ctx (App t1 t2) = "(" ++ showTm ctx t1 ++ " " ++ showTm ctx t2 ++ ")"
 showTm ctx (Abs x _ t1) = "(λ" ++ x' ++ ". " ++ showTm ctx' t1 ++ ")"
