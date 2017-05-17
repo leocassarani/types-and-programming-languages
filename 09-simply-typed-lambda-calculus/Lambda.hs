@@ -28,10 +28,10 @@ data Binding = NameBind
 showTm :: Context -> Term -> String
 showTm _ Tru = "true"
 showTm _ Fls = "false"
-showTm ctx (If t1 t2 t3) = "(if " ++ show t1 ++ " then " ++ show t2 ++ " else " ++ show t3 ++ ")"
+showTm ctx (If t1 t2 t3) = "(if " ++ showTm ctx t1 ++ " then " ++ showTm ctx t2 ++ " else " ++ showTm ctx t3 ++ ")"
 showTm ctx (Var x) = indexToName ctx x
 showTm ctx (App t1 t2) = "(" ++ showTm ctx t1 ++ " " ++ showTm ctx t2 ++ ")"
-showTm ctx (Abs x _ t1) = "(λ" ++ x' ++ ". " ++ showTm ctx' t1 ++ ")"
+showTm ctx (Abs x typ t1) = "(λ" ++ x' ++ ":" ++ show typ ++ ". " ++ showTm ctx' t1 ++ ")"
   where (ctx', x') = freshName ctx x
 
 indexToName :: Context -> Int -> String
