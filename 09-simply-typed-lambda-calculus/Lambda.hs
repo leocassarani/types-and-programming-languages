@@ -46,5 +46,7 @@ freshName ctx x = if x `elem` names
                   where names = map fst ctx
 
 isVal :: Term -> Bool
+isVal Tru = True
+isVal Fls = True
 isVal (Abs _ _ _) = True
 isVal _ = False

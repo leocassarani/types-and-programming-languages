@@ -2,7 +2,7 @@ module Generator where
 
 import Lambda
 
-import Control.Monad (liftM, liftM2, liftM3)
+import Control.Monad (liftM, liftM2)
 import Data.List (elemIndices)
 import Test.QuickCheck
 
@@ -51,6 +51,7 @@ genAbs ctx typ1 typ2 = do
   name <- varName
   return (Abs name typ1 body)
 
+-- Generate a random one-letter variable name.
 varName :: Gen String
 varName = do
   char <- elements ['a'..'z']
