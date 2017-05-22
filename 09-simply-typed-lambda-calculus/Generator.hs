@@ -2,7 +2,6 @@ module Generator where
 
 import Lambda
 
-import Control.Monad (liftM, liftM2)
 import Data.List (elemIndices)
 import Test.QuickCheck
 
@@ -14,7 +13,7 @@ genType 0 = return Bool
 genType n = do
   n'  <- choose (0, n `div` 2)
   n'' <- choose (0, n `div` 2)
-  liftM2 Func (genType n') (genType n'')
+  Func <$> genType n' <*> genType n''
 
 instance Arbitrary Term where
   arbitrary = genTerm [] =<< arbitrary
@@ -22,7 +21,7 @@ instance Arbitrary Term where
 genTerm :: [Type] -> Type -> Gen Term
 genTerm ctx typ
   | null vars = genTerm' ctx typ
-  | otherwise = frequency [ (5, liftM Var (elements vars))
+  | otherwise = frequency [ (5, Var <$> elements vars)
                           , (1, genTerm' ctx typ)
                           ]
     where vars = elemIndices typ ctx
