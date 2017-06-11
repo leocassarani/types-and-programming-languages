@@ -8,6 +8,8 @@ typeOf :: Context -> Term -> Maybe Type
 typeOf _ Tru = return Bool -- T-True
 typeOf _ Fls = return Bool -- T-False
 
+typeOf _ Unit = return UnitType -- T-Unit
+
 typeOf ctx (If t1 t2 t3) = do -- T-If
   Bool <- typeOf ctx t1
   typ2 <- typeOf ctx t2

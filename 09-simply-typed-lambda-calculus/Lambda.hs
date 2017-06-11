@@ -2,10 +2,12 @@ module Lambda where
 
 data Type = Bool
           | Func Type Type
+          | UnitType
           deriving (Eq)
 
 instance Show Type where
   show Bool = "Bool"
+  show UnitType = "Unit"
   show (Func t1 t2) = "(" ++ show t1 ++ " → " ++ show t2 ++ ")"
 
 data Term = Tru
@@ -14,6 +16,7 @@ data Term = Tru
           | Var Int
           | Abs String Type Term
           | App Term Term
+          | Unit
           deriving (Eq)
 
 instance Show Term where
@@ -28,6 +31,7 @@ data Binding = NameBind
 showTm :: Context -> Term -> String
 showTm _ Tru = "true"
 showTm _ Fls = "false"
+showTm _ Unit = "unit"
 showTm ctx (If t1 t2 t3) = "(if " ++ showTm ctx t1 ++ " then " ++ showTm ctx t2 ++ " else " ++ showTm ctx t3 ++ ")"
 showTm ctx (Var x) = indexToName ctx x
 showTm ctx (App t1 t2) = "(" ++ showTm ctx t1 ++ " " ++ showTm ctx t2 ++ ")"
@@ -48,5 +52,6 @@ freshName ctx x = if x `elem` names
 isVal :: Term -> Bool
 isVal Tru = True
 isVal Fls = True
+isVal Unit = True
 isVal (Abs _ _ _) = True
 isVal _ = False

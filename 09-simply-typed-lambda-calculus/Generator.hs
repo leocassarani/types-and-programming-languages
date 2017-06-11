@@ -9,7 +9,9 @@ instance Arbitrary Type where
   arbitrary = sized genType
 
 genType :: Int -> Gen Type
-genType 0 = return Bool
+genType 0 = frequency [ (3, return Bool)
+                      , (1, return UnitType)
+                      ]
 genType n = do
   n'  <- choose (0, n `div` 2)
   n'' <- choose (0, n `div` 2)
@@ -27,6 +29,10 @@ genTerm ctx typ
     where vars = elemIndices typ ctx
 
 genTerm' :: [Type] -> Type -> Gen Term
+genTerm' ctx UnitType = frequency [ (9, return Unit)
+                                  , (2, genIf ctx UnitType)
+                                  , (1, genApp ctx UnitType)
+                                  ]
 genTerm' ctx Bool = frequency [ (9, elements [Tru, Fls])
                               , (2, genIf ctx Bool)
                               , (1, genApp ctx Bool)
