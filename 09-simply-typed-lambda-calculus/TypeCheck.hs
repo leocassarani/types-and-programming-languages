@@ -32,6 +32,11 @@ typeOf ctx (App t1 t2) = do -- T-App
   guard (typ11 == typ2)
   return typ12
 
+typeOf ctx (As t1 typ1) = do -- T-Ascribe
+  typ2 <- typeOf ctx t1
+  guard (typ1 == typ2)
+  return typ1
+
 index :: [a] -> Int -> Maybe a
 index [] _ = Nothing
 index (x:_) 0 = Just x
