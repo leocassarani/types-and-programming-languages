@@ -37,6 +37,11 @@ typeOf ctx (As t1 typ1) = do -- T-Ascribe
   guard (typ1 == typ2)
   return typ1
 
+typeOf ctx (Let x t1 t2) = do -- T-Let
+  typ1 <- typeOf ctx t1
+  let ctx' = (x, VarBind typ1) : ctx
+  typeOf ctx' t2
+
 index :: [a] -> Int -> Maybe a
 index [] _ = Nothing
 index (x:_) 0 = Just x

@@ -34,7 +34,10 @@ eval1 (If t1 t2 t3) = fmap (\t1' -> If t1' t2 t3) (eval1 t1)
 eval1 (As t1 typ)
   | isVal t1 = Just t1 -- E-Abscribe
   | otherwise = fmap (\t1' -> As t1' typ) (eval1 t1) -- E-Ascribe1
-eval1 (App (Abs x _ t12) v2)
+eval1 (Let x t1 t2)
+  | isVal t1 = Just (termSubTop t1 t2) -- E-LetV
+  | otherwise = fmap (\t1' -> Let x t1' t2) (eval1 t1) -- E-Let
+eval1 (App (Abs _ _ t12) v2)
   | isVal v2 = Just (termSubTop v2 t12) -- E-AppAbs
 eval1 (App t1 t2)
   | isVal t1  = fmap (\t2' -> App t1 t2') (eval1 t2) -- E-App2

@@ -18,6 +18,7 @@ data Term = Tru
           | App Term Term
           | Unit
           | As Term Type
+          | Let String Term Term
           deriving (Eq)
 
 instance Show Term where
@@ -35,6 +36,7 @@ showTm _ Fls = "false"
 showTm _ Unit = "unit"
 showTm ctx (If t1 t2 t3) = "(if " ++ showTm ctx t1 ++ " then " ++ showTm ctx t2 ++ " else " ++ showTm ctx t3 ++ ")"
 showTm ctx (As t1 typ) = showTm ctx t1 ++ " as " ++ show typ
+showTm ctx (Let x t1 t2) = "let " ++ x ++ " = " ++ showTm ctx t1 ++ " in " ++ showTm ctx t2
 showTm ctx (Var x) = indexToName ctx x
 showTm ctx (App t1 t2) = "(" ++ showTm ctx t1 ++ " " ++ showTm ctx t2 ++ ")"
 showTm ctx (Abs x typ t1) = "(λ" ++ x' ++ ":" ++ show typ ++ ". " ++ showTm ctx' t1 ++ ")"
