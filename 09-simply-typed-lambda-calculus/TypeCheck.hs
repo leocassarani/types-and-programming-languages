@@ -42,6 +42,13 @@ typeOf ctx (Let x t1 t2) = do -- T-Let
   let ctx' = (x, VarBind typ1) : ctx
   typeOf ctx' t2
 
+typeOf ctx (Tuple terms) = -- T-Tuple
+  TupleType <$> sequence (map (typeOf ctx) terms)
+
+typeOf ctx (Project t1 idx) = do --T-Proj
+  TupleType types <- typeOf ctx t1
+  types `index` (idx - 1)
+
 index :: [a] -> Int -> Maybe a
 index [] _ = Nothing
 index (x:_) 0 = Just x

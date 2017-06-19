@@ -1,14 +1,18 @@
 module Lambda where
 
+import Data.List (intercalate)
+
 data Type = Bool
-          | Func Type Type
           | UnitType
+          | Func Type Type
+          | TupleType [Type]
           deriving (Eq)
 
 instance Show Type where
   show Bool = "Bool"
   show UnitType = "Unit"
   show (Func t1 t2) = "(" ++ show t1 ++ " → " ++ show t2 ++ ")"
+  show (TupleType types) = "{" ++ intercalate ", " (map show types) ++ "}"
 
 data Term = Tru
           | Fls
@@ -19,6 +23,8 @@ data Term = Tru
           | Unit
           | As Term Type
           | Let String Term Term
+          | Tuple [Term]
+          | Project Term Int
           deriving (Eq)
 
 instance Show Term where
@@ -35,12 +41,15 @@ showTm _ Tru = "true"
 showTm _ Fls = "false"
 showTm _ Unit = "unit"
 showTm ctx (If t1 t2 t3) = "(if " ++ showTm ctx t1 ++ " then " ++ showTm ctx t2 ++ " else " ++ showTm ctx t3 ++ ")"
-showTm ctx (As t1 typ) = showTm ctx t1 ++ " as " ++ show typ
-showTm ctx (Let x t1 t2) = "let " ++ x ++ " = " ++ showTm ctx t1 ++ " in " ++ showTm ctx t2
 showTm ctx (Var x) = indexToName ctx x
 showTm ctx (App t1 t2) = "(" ++ showTm ctx t1 ++ " " ++ showTm ctx t2 ++ ")"
 showTm ctx (Abs x typ t1) = "(λ" ++ x' ++ ":" ++ show typ ++ ". " ++ showTm ctx' t1 ++ ")"
   where (ctx', x') = freshName ctx x
+showTm ctx (As t1 typ) = showTm ctx t1 ++ " as " ++ show typ
+showTm ctx (Let x t1 t2) = "let " ++ x ++ " = " ++ showTm ctx t1 ++ " in " ++ showTm ctx t2
+showTm ctx (Tuple terms) = "{" ++ intercalate ", " termStrings ++ "}"
+  where termStrings = map (showTm ctx) terms
+showTm ctx (Project term idx) = showTm ctx term ++ "." ++ show idx
 
 indexToName :: Context -> Int -> String
 indexToName ctx x
@@ -58,4 +67,5 @@ isVal Tru = True
 isVal Fls = True
 isVal Unit = True
 isVal (Abs _ _ _) = True
+isVal (Tuple terms) = all isVal terms
 isVal _ = False

@@ -1,5 +1,7 @@
 module Eval where
 
+import Data.List (findIndex)
+
 import Lambda
 
 termShift :: Int -> Term -> Term
@@ -31,18 +33,31 @@ eval1 :: Term -> Maybe Term
 eval1 (If Tru t _) = Just t
 eval1 (If Fls _ t) = Just t
 eval1 (If t1 t2 t3) = fmap (\t1' -> If t1' t2 t3) (eval1 t1)
+eval1 (App (Abs _ _ t12) v2)
+  | isVal v2 = Just (termSubTop v2 t12) -- E-AppAbs
+eval1 (App t1 t2)
+  | isVal t1  = fmap (\t2' -> App t1 t2') (eval1 t2) -- E-App2
+  | otherwise = fmap (\t1' -> App t1' t2) (eval1 t1) -- E-App1
 eval1 (As t1 typ)
   | isVal t1 = Just t1 -- E-Abscribe
   | otherwise = fmap (\t1' -> As t1' typ) (eval1 t1) -- E-Ascribe1
 eval1 (Let x t1 t2)
   | isVal t1 = Just (termSubTop t1 t2) -- E-LetV
   | otherwise = fmap (\t1' -> Let x t1' t2) (eval1 t1) -- E-Let
-eval1 (App (Abs _ _ t12) v2)
-  | isVal v2 = Just (termSubTop v2 t12) -- E-AppAbs
-eval1 (App t1 t2)
-  | isVal t1  = fmap (\t2' -> App t1 t2') (eval1 t2) -- E-App2
-  | otherwise = fmap (\t1' -> App t1' t2) (eval1 t1) -- E-App1
+eval1 (Tuple terms) = do -- E-Tuple
+  idx <- findIndex (not . isVal) terms
+  term <- terms `index` idx
+  fmap (Tuple . replaceTerm idx) (eval1 term)
+    where replaceTerm n term = take n terms ++ [term] ++ drop (n + 1) terms
+eval1 (Project t@(Tuple terms) idx)
+  | isVal t = terms `index` (idx - 1) -- E-ProjTuple
+eval1 (Project t idx) = fmap (\t' -> Project t' idx) (eval1 t) -- E-Proj
 eval1 _ = Nothing
+
+index :: [a] -> Int -> Maybe a
+index [] _ = Nothing
+index (x:_) 0 = Just x
+index (_:xs) i = index xs (i - 1)
 
 eval :: Term -> Term
 eval t = maybe t eval (eval1 t)
