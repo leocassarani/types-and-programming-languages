@@ -1,6 +1,6 @@
 module Eval where
 
-import Data.List (findIndex)
+import Data.List (find, findIndex)
 
 import Lambda
 
@@ -47,17 +47,29 @@ eval1 (Let x t1 t2)
 eval1 (Tuple terms) = do -- E-Tuple
   idx <- findIndex (not . isVal) terms
   term <- terms `index` idx
-  fmap (Tuple . replaceTerm idx) (eval1 term)
-    where replaceTerm n term = take n terms ++ [term] ++ drop (n + 1) terms
+  fmap (Tuple . replace terms idx) (eval1 term)
 eval1 (TupleProject t@(Tuple terms) idx)
   | isVal t = terms `index` (idx - 1) -- E-ProjTuple
 eval1 (TupleProject t idx) = fmap (\t' -> TupleProject t' idx) (eval1 t) -- E-Proj
+eval1 (Record entries) = do --E-Rcd
+  idx <- findIndex (not . isVal . snd) entries
+  (label, term) <- entries `index` idx
+  term' <- eval1 term
+  let entries' = replace entries idx (label, term')
+  return (Record entries')
+eval1 (RecordProject r@(Record entries) label)
+  | isVal r = snd <$> lookup entries label -- E-ProjRcd
+  | otherwise = fmap (\r' -> RecordProject r' label) (eval1 r) -- E-Proj
+  where lookup entries label = find ((label ==) . fst) entries
 eval1 _ = Nothing
 
 index :: [a] -> Int -> Maybe a
 index [] _ = Nothing
 index (x:_) 0 = Just x
 index (_:xs) i = index xs (i - 1)
+
+replace :: [a] -> Int -> a -> [a]
+replace xs n x = take n xs ++ [x] ++ drop (n + 1) xs
 
 eval :: Term -> Term
 eval t = maybe t eval (eval1 t)

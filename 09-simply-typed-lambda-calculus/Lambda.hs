@@ -25,6 +25,8 @@ data Term = Tru
           | Let String Term Term
           | Tuple [Term]
           | TupleProject Term Int
+          | Record [(String, Term)]
+          | RecordProject Term String
           deriving (Eq)
 
 instance Show Term where
@@ -50,6 +52,9 @@ showTm ctx (Let x t1 t2) = "let " ++ x ++ " = " ++ showTm ctx t1 ++ " in " ++ sh
 showTm ctx (Tuple terms) = "{" ++ intercalate ", " termStrings ++ "}"
   where termStrings = map (showTm ctx) terms
 showTm ctx (TupleProject term idx) = showTm ctx term ++ "." ++ show idx
+showTm ctx (Record entries) = "{" ++ intercalate ", " (map showEntry entries) ++ "}"
+  where showEntry (l, t) = l ++ "=" ++ showTm ctx t
+showTm ctx (RecordProject term label) = showTm ctx term ++ "." ++ label
 
 indexToName :: Context -> Int -> String
 indexToName ctx x
@@ -68,4 +73,5 @@ isVal Fls = True
 isVal Unit = True
 isVal (Abs _ _ _) = True
 isVal (Tuple terms) = all isVal terms
+isVal (Record entries) = all (isVal . snd) entries
 isVal _ = False
