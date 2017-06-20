@@ -45,7 +45,7 @@ typeOf ctx (Let x t1 t2) = do -- T-Let
 typeOf ctx (Tuple terms) = -- T-Tuple
   TupleType <$> sequence (map (typeOf ctx) terms)
 
-typeOf ctx (Project t1 idx) = do --T-Proj
+typeOf ctx (TupleProject t1 idx) = do --T-Proj
   TupleType types <- typeOf ctx t1
   types `index` (idx - 1)
 

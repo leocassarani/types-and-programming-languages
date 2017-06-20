@@ -24,7 +24,7 @@ data Term = Tru
           | As Term Type
           | Let String Term Term
           | Tuple [Term]
-          | Project Term Int
+          | TupleProject Term Int
           deriving (Eq)
 
 instance Show Term where
@@ -49,7 +49,7 @@ showTm ctx (As t1 typ) = showTm ctx t1 ++ " as " ++ show typ
 showTm ctx (Let x t1 t2) = "let " ++ x ++ " = " ++ showTm ctx t1 ++ " in " ++ showTm ctx t2
 showTm ctx (Tuple terms) = "{" ++ intercalate ", " termStrings ++ "}"
   where termStrings = map (showTm ctx) terms
-showTm ctx (Project term idx) = showTm ctx term ++ "." ++ show idx
+showTm ctx (TupleProject term idx) = showTm ctx term ++ "." ++ show idx
 
 indexToName :: Context -> Int -> String
 indexToName ctx x

@@ -49,9 +49,9 @@ eval1 (Tuple terms) = do -- E-Tuple
   term <- terms `index` idx
   fmap (Tuple . replaceTerm idx) (eval1 term)
     where replaceTerm n term = take n terms ++ [term] ++ drop (n + 1) terms
-eval1 (Project t@(Tuple terms) idx)
+eval1 (TupleProject t@(Tuple terms) idx)
   | isVal t = terms `index` (idx - 1) -- E-ProjTuple
-eval1 (Project t idx) = fmap (\t' -> Project t' idx) (eval1 t) -- E-Proj
+eval1 (TupleProject t idx) = fmap (\t' -> TupleProject t' idx) (eval1 t) -- E-Proj
 eval1 _ = Nothing
 
 index :: [a] -> Int -> Maybe a
