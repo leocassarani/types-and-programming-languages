@@ -1,3 +1,5 @@
+{-# LANGUAGE TupleSections #-}
+
 module Eval where
 
 import Data.List (find, findIndex)
@@ -30,37 +32,49 @@ termSubTop :: Term -> Term -> Term
 termSubTop s t = termShift (-1) (termSub 0 (termShift 1 s) t)
 
 eval1 :: Term -> Maybe Term
-eval1 (If Tru t _) = Just t
-eval1 (If Fls _ t) = Just t
-eval1 (If t1 t2 t3) = fmap (\t1' -> If t1' t2 t3) (eval1 t1)
+
+eval1 (If Tru t _) = Just t -- E-IfTrue
+eval1 (If Fls _ t) = Just t -- E-IfFalse
+
+eval1 (If t1 t2 t3) = (\t1' -> If t1' t2 t3) <$> eval1 t1 -- E-If
+
 eval1 (App (Abs _ _ t12) v2)
   | isVal v2 = Just (termSubTop v2 t12) -- E-AppAbs
+
 eval1 (App t1 t2)
-  | isVal t1  = fmap (\t2' -> App t1 t2') (eval1 t2) -- E-App2
-  | otherwise = fmap (\t1' -> App t1' t2) (eval1 t1) -- E-App1
+  | isVal t1 = App t1 <$> eval1 t2 -- E-App2
+  | otherwise = (\t1' -> App t1' t2) <$> eval1 t1 -- E-App1
+
 eval1 (As t1 typ)
   | isVal t1 = Just t1 -- E-Abscribe
-  | otherwise = fmap (\t1' -> As t1' typ) (eval1 t1) -- E-Ascribe1
+  | otherwise = (\t1' -> As t1' typ) <$> eval1 t1 -- E-Ascribe1
+
 eval1 (Let x t1 t2)
   | isVal t1 = Just (termSubTop t1 t2) -- E-LetV
-  | otherwise = fmap (\t1' -> Let x t1' t2) (eval1 t1) -- E-Let
+  | otherwise = (\t1' -> Let x t1' t2) <$> eval1 t1 -- E-Let
+
 eval1 (Tuple terms) = do -- E-Tuple
   idx <- findIndex (not . isVal) terms
   term <- terms `index` idx
   fmap (Tuple . replace terms idx) (eval1 term)
+
 eval1 (TupleProject t@(Tuple terms) idx)
   | isVal t = terms `index` (idx - 1) -- E-ProjTuple
-eval1 (TupleProject t idx) = fmap (\t' -> TupleProject t' idx) (eval1 t) -- E-Proj
+
+eval1 (TupleProject t idx) = (\t' -> TupleProject t' idx) <$> eval1 t -- E-Proj
+
 eval1 (Record entries) = do --E-Rcd
   idx <- findIndex (not . isVal . snd) entries
   (label, term) <- entries `index` idx
-  term' <- eval1 term
-  let entries' = replace entries idx (label, term')
+  entry' <- (label,) <$> eval1 term
+  let entries' = replace entries idx entry'
   return (Record entries')
+
 eval1 (RecordProject r@(Record entries) label)
   | isVal r = snd <$> lookup entries label -- E-ProjRcd
-  | otherwise = fmap (\r' -> RecordProject r' label) (eval1 r) -- E-Proj
+  | otherwise = (\r' -> RecordProject r' label) <$> eval1 r -- E-Proj
   where lookup entries label = find ((label ==) . fst) entries
+
 eval1 _ = Nothing
 
 index :: [a] -> Int -> Maybe a
