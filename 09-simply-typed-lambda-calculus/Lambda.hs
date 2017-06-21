@@ -6,6 +6,7 @@ data Type = Bool
           | UnitType
           | Func Type Type
           | TupleType [Type]
+          | RecordType [(String, Type)]
           deriving (Eq)
 
 instance Show Type where
@@ -13,6 +14,8 @@ instance Show Type where
   show UnitType = "Unit"
   show (Func t1 t2) = "(" ++ show t1 ++ " → " ++ show t2 ++ ")"
   show (TupleType types) = "{" ++ intercalate ", " (map show types) ++ "}"
+  show (RecordType entries) = "{" ++ intercalate ", " (map showEntry entries) ++ "}"
+    where showEntry (l, t) = l ++ "=" ++ show t
 
 data Term = Tru
           | Fls

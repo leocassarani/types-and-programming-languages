@@ -1,11 +1,15 @@
+{-# LANGUAGE TupleSections #-}
+
 module TypeCheck where
 
 import Lambda
 import Control.Monad (guard)
+import Data.List (find)
 
 typeOf :: Context -> Term -> Maybe Type
 
 typeOf _ Tru = return Bool -- T-True
+
 typeOf _ Fls = return Bool -- T-False
 
 typeOf _ Unit = return UnitType -- T-Unit
@@ -48,6 +52,14 @@ typeOf ctx (Tuple terms) = -- T-Tuple
 typeOf ctx (TupleProject t1 idx) = do --T-Proj
   TupleType types <- typeOf ctx t1
   types `index` (idx - 1)
+
+typeOf ctx (Record entries) = -- T-Rcd
+  let entryType (l, t) = (l,) <$> typeOf ctx t
+   in RecordType <$> sequence (map entryType entries)
+
+typeOf ctx (RecordProject t1 label) = do -- T-Proj
+  RecordType entries <- typeOf ctx t1
+  snd <$> find ((label ==) . fst) entries
 
 index :: [a] -> Int -> Maybe a
 index [] _ = Nothing
