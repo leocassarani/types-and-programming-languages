@@ -75,6 +75,19 @@ eval1 (RecordProject r@(Record entries) label)
   | otherwise = (\r' -> RecordProject r' label) <$> eval1 r -- E-Proj
   where lookup entries label = find ((label ==) . fst) entries
 
+eval1 (Case ((Inl inl) `As` typ) (_, t1) _) -- E-CaseInl
+  | isVal inl = Just (termSubTop inl t1)
+
+eval1 (Case (Inr inr) _ (_, t2)) -- E-CaseInr
+  | isVal inr = Just (termSubTop inr t2)
+
+eval1 (Case t0 left right) = --E-Case
+  (\t0' -> Case t0' left right) <$> eval1 t0
+
+eval1 (As (Inl t) _) = Inl <$> eval1 t -- E-Inl
+
+eval1 (As (Inr t) _) = Inr <$> eval1 t -- E-Inr
+
 eval1 _ = Nothing
 
 index :: [a] -> Int -> Maybe a
