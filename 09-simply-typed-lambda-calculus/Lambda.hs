@@ -7,7 +7,7 @@ data Type = Bool
           | Func Type Type
           | TupleType [Type]
           | RecordType [(String, Type)]
-          | SumType Type Type
+          | Variant [(String, Type)]
           deriving (Eq)
 
 instance Show Type where
@@ -17,7 +17,8 @@ instance Show Type where
   show (TupleType types) = "{" ++ intercalate ", " (map show types) ++ "}"
   show (RecordType entries) = "{" ++ intercalate ", " (map showEntry entries) ++ "}"
     where showEntry (l, t) = l ++ "=" ++ show t
-  show (SumType left right) = show left ++ " + " ++ show right
+  show (Variant branches) =  "<" ++ intercalate ", " (map showBranch branches) ++ ">"
+    where showBranch (l, t) = l ++ ":" ++ show t
 
 data Term = Tru
           | Fls
@@ -32,9 +33,8 @@ data Term = Tru
           | TupleProject Term Int
           | Record [(String, Term)]
           | RecordProject Term String
-          | Inl Term
-          | Inr Term
-          | Case Term (String, Term) (String, Term)
+          | Tag String Term Type
+          | Case Term [(String, String, Term)]
           deriving (Eq)
 
 instance Show Term where
@@ -63,10 +63,9 @@ showTm ctx (TupleProject term idx) = showTm ctx term ++ "." ++ show idx
 showTm ctx (Record entries) = "{" ++ intercalate ", " (map showEntry entries) ++ "}"
   where showEntry (l, t) = l ++ "=" ++ showTm ctx t
 showTm ctx (RecordProject term label) = showTm ctx term ++ "." ++ label
-showTm ctx (Inl t) = "inl " ++ showTm ctx t
-showTm ctx (Inr t) = "inr " ++ showTm ctx t
-showTm ctx (Case t left right) = "case " ++ showTm ctx t ++ " of inl " ++ showBranch left ++ " | inr " ++ showBranch right
-  where showBranch (x, t) = x ++ " ⇒ " ++ showTm ctx t
+showTm ctx (Tag label term typ) = "<" ++ label ++ " = " ++ showTm ctx term ++ "> as " ++ show typ
+showTm ctx (Case variant branches) = "case (" ++ showTm ctx variant ++ ") of " ++ intercalate " | " (map showBranch branches)
+  where showBranch (label, var, term) = "<" ++ label ++ " = " ++ var ++ ">" ++ " ⇒ " ++ showTm ctx term
 
 indexToName :: Context -> Int -> String
 indexToName ctx x
@@ -86,6 +85,4 @@ isVal Unit = True
 isVal (Abs _ _ _) = True
 isVal (Tuple terms) = all isVal terms
 isVal (Record entries) = all (isVal . snd) entries
-isVal (As (Inl t) _) = isVal t
-isVal (As (Inr t) _) = isVal t
 isVal _ = False

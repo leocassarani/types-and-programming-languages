@@ -45,6 +45,10 @@ eval1 (App t1 t2)
   | isVal t1 = App t1 <$> eval1 t2 -- E-App2
   | otherwise = (\t1' -> App t1' t2) <$> eval1 t1 -- E-App1
 
+eval1 (t1 `As` typ)
+  | isVal t1 = Just t1 -- E-Abscribe
+  | otherwise = (\t1' -> As t1' typ) <$> eval1 t1 -- E-Ascribe1
+
 eval1 (Let x t1 t2)
   | isVal t1 = Just (termSubTop t1 t2) -- E-LetV
   | otherwise = (\t1' -> Let x t1' t2) <$> eval1 t1 -- E-Let
@@ -71,22 +75,14 @@ eval1 (RecordProject r@(Record entries) label)
   | otherwise = (\r' -> RecordProject r' label) <$> eval1 r -- E-Proj
   where lookup entries label = find ((label ==) . fst) entries
 
-eval1 (Case (Inl inl `As` _) (_, t1) _) -- E-CaseInl
-  | isVal inl = Just (termSubTop inl t1)
+eval1 (Case (Tag label term typ) branches)
+  | isVal term = termSubTop term <$> branch -- E-CaseVariant
+  | otherwise = (\term' -> Case (Tag label term' typ) branches) <$> eval1 term -- E-Case
+  where branch = third <$> find ((label ==) . first) branches
+        first (x, _, _) = x
+        third (_, _, x) = x
 
-eval1 (Case (Inr inr `As` _) _ (_, t2)) -- E-CaseInr
-  | isVal inr = Just (termSubTop inr t2)
-
-eval1 (Case t0 left right) = --E-Case
-  (\t0' -> Case t0' left right) <$> eval1 t0
-
-eval1 (Inl t `As` typ) = (\t' -> Inl t' `As` typ) <$> eval1 t -- E-Inl
-
-eval1 (Inr t `As` typ) = (\t' -> Inr t' `As` typ) <$> eval1 t -- E-Inr
-
-eval1 (t1 `As` typ)
-  | isVal t1 = Just t1 -- E-Abscribe
-  | otherwise = (\t1' -> As t1' typ) <$> eval1 t1 -- E-Ascribe1
+eval1 (Tag label term typ) = (\term' -> Tag label term' typ) <$> eval1 term -- E-Variant
 
 eval1 _ = Nothing
 

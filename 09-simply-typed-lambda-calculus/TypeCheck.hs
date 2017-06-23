@@ -36,6 +36,11 @@ typeOf ctx (App t1 t2) = do -- T-App
   guard (typ11 == typ2)
   return typ12
 
+typeOf ctx (As t1 typ1) = do -- T-Ascribe
+  typ2 <- typeOf ctx t1
+  guard (typ1 == typ2)
+  return typ1
+
 typeOf ctx (Let x t1 t2) = do -- T-Let
   typ1 <- typeOf ctx t1
   let ctx' = (x, VarBind typ1) : ctx
@@ -56,27 +61,23 @@ typeOf ctx (RecordProject t1 label) = do -- T-Proj
   RecordType entries <- typeOf ctx t1
   snd <$> find ((label ==) . fst) entries
 
-typeOf ctx (Case t0 (x1, t1) (x2, t2)) = do -- T-Case
-  SumType typ1 typ2 <- typeOf ctx t0
-  inlTyp <- typeOf ((x1, VarBind typ1) : ctx) t1
-  inrTyp <- typeOf ((x2, VarBind typ2) : ctx) t2
-  guard (inlTyp == inrTyp)
-  return inlTyp
+typeOf ctx (Tag label term typ@(Variant vars)) = do -- T-Variant
+  (_, varType) <- find ((label ==) . fst) vars
+  termType <- typeOf ctx term
+  guard (varType == termType)
+  return typ
 
-typeOf ctx (Inl t1 `As` sum@(SumType typ1 _)) = do -- T-Inl
-  typ <- typeOf ctx t1
-  guard (typ == typ1)
-  return sum
+typeOf ctx (Case t0 branches) = do -- T-Case
+  Variant vars <- typeOf ctx t0
+  guard (length vars == length branches)
+  typ : types <- sequence (zipWith (branchType ctx) vars branches)
+  guard (all (typ ==) types)
+  return typ
 
-typeOf ctx (Inr t1 `As` sum@(SumType _ typ2)) = do -- T-Inr
-  typ <- typeOf ctx t1
-  guard (typ == typ2)
-  return sum
-
-typeOf ctx (As t1 typ1) = do -- T-Ascribe
-  typ2 <- typeOf ctx t1
-  guard (typ1 == typ2)
-  return typ1
+branchType :: Context -> (String, Type) -> (String, String, Term) -> Maybe Type
+branchType ctx (vlab, typ) (blab, x, term) = do
+  guard (vlab == blab)
+  typeOf ((x, VarBind typ) : ctx) term
 
 index :: [a] -> Int -> Maybe a
 index [] _ = Nothing
