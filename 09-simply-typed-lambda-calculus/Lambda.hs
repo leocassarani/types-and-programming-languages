@@ -8,6 +8,7 @@ data Type = Bool
           | TupleType [Type]
           | RecordType [(String, Type)]
           | Variant [(String, Type)]
+          | List Type
           deriving (Eq)
 
 instance Show Type where
@@ -19,6 +20,7 @@ instance Show Type where
     where showEntry (l, t) = l ++ "=" ++ show t
   show (Variant branches) =  "<" ++ intercalate ", " (map showBranch branches) ++ ">"
     where showBranch (l, t) = l ++ ":" ++ show t
+  show (List typ) = "List " ++ show typ
 
 data Term = Tru
           | Fls
@@ -35,6 +37,11 @@ data Term = Tru
           | RecordProject Term String
           | Tag String Term Type
           | Case Term [(String, String, Term)]
+          | Nil Type
+          | Cons Type Term Term
+          | IsNil Type Term
+          | Head Type Term
+          | Tail Type Term
           deriving (Eq)
 
 instance Show Term where
@@ -66,6 +73,11 @@ showTm ctx (RecordProject term label) = showTm ctx term ++ "." ++ label
 showTm ctx (Tag label term typ) = "<" ++ label ++ " = " ++ showTm ctx term ++ "> as " ++ show typ
 showTm ctx (Case variant branches) = "case (" ++ showTm ctx variant ++ ") of " ++ intercalate " | " (map showBranch branches)
   where showBranch (label, var, term) = "<" ++ label ++ " = " ++ var ++ ">" ++ " ⇒ " ++ showTm ctx term
+showTm ctx (Nil typ) = "nil[" ++ show typ ++ "]"
+showTm ctx (Cons typ t1 t2) = "cons[" ++ show typ ++ "] " ++ showTm ctx t1 ++ " " ++ showTm ctx t2
+showTm ctx (IsNil typ t) = "isnil[" ++ show typ ++ "] (" ++ showTm ctx t ++ ")"
+showTm ctx (Head typ t) = "head[" ++ show typ ++ "] " ++ showTm ctx t
+showTm ctx (Tail typ t) = "tail[" ++ show typ ++ "] " ++ showTm ctx t
 
 indexToName :: Context -> Int -> String
 indexToName ctx x
@@ -85,4 +97,6 @@ isVal Unit = True
 isVal (Abs _ _ _) = True
 isVal (Tuple terms) = all isVal terms
 isVal (Record entries) = all (isVal . snd) entries
+isVal (Nil _) = True
+isVal (Cons _ t1 t2) = isVal t1 && isVal t2
 isVal _ = False

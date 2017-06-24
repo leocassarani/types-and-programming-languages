@@ -84,6 +84,26 @@ eval1 (Case (Tag label term typ) branches)
 
 eval1 (Tag label term typ) = (\term' -> Tag label term' typ) <$> eval1 term -- E-Variant
 
+eval1 (Cons typ t1 t2)
+  | isVal t1 = (\t1' -> Cons typ t1' t2) <$> eval1 t1 -- E-Cons1
+  | otherwise = Cons typ t1 <$> eval1 t2 -- E-Cons2
+
+eval1 (IsNil _ (Nil _)) = Just Tru -- E-IsNilNil
+
+eval1 (IsNil _ (Cons _ _ _)) = Just Fls -- E-IsNilCons
+
+eval1 (IsNil typ t1) = IsNil typ <$> eval1 t1 -- E-IsNil
+
+eval1 (Head _ (Cons _ t1 t2))
+  | isVal t1 && isVal t2 = Just t1 -- E-HeadCons
+
+eval1 (Head typ t1) = Head typ <$> eval1 t1 -- E-Head
+
+eval1 (Tail _ (Cons _ t1 t2))
+  | isVal t1 && isVal t2 = Just t2 -- E-TailCons
+
+eval1 (Tail typ t1) = Tail typ <$> eval1 t1 -- E-Tail
+
 eval1 _ = Nothing
 
 index :: [a] -> Int -> Maybe a

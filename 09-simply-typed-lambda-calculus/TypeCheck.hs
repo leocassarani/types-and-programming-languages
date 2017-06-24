@@ -74,6 +74,30 @@ typeOf ctx (Case t0 branches) = do -- T-Case
   guard (all (typ ==) types)
   return typ
 
+typeOf _ (Nil typ) = return (List typ) -- T-Nil
+
+typeOf ctx (Cons typ t1 t2) = do -- T-Cons
+  headType <- typeOf ctx t1
+  guard (headType == typ)
+  (List tailType) <- typeOf ctx t2
+  guard (tailType == typ)
+  return (List typ)
+
+typeOf ctx (IsNil typ t1) = do -- T-IsNil
+  (List termType) <- typeOf ctx t1
+  guard (termType == typ)
+  return Bool
+
+typeOf ctx (Head typ t1) = do -- T-Head
+  (List termType) <- typeOf ctx t1
+  guard (termType == typ)
+  return typ
+
+typeOf ctx (Tail typ t1) = do -- T-Tail
+  (List termType) <- typeOf ctx t1
+  guard (termType == typ)
+  return (List typ)
+
 branchType :: Context -> (String, Type) -> (String, String, Term) -> Maybe Type
 branchType ctx (vlab, typ) (blab, x, term) = do
   guard (vlab == blab)
